@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consent Form</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- html2canvas CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Styling for the signature pad */
+        #signature-pad {
+            border: 2px dashed #d1d5db;
+            border-radius: 0.5rem;
+            cursor: crosshair;
+            touch-action: none;
+            width: 100%;
+            height: 200px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 flex items-center justify-center min-h-screen p-4">
+
+    <!-- The entire form container that will be captured as an image -->
+    <div id="consent-container" class="bg-white rounded-xl shadow-lg p-8 w-full max-w-2xl">
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Image and Video Consent for Marketing & Social Media</h1>
+            <p class="text-gray-600 leading-relaxed">We love to showcase the amazing results we achieve for our clients on our social media and in our advertising. This helps other people see the possibilities of our treatments.</p>
+        </div>
+
+        <form id="consent-form" class="space-y-6">
+            <!-- Patient Name Input -->
+            <div class="space-y-2">
+                <label for="patient-name" class="text-gray-700 text-sm font-semibold">Patient Name:</label>
+                <input type="text" id="patient-name" name="patient-name" required class="w-full p-3 text-sm rounded-lg border border-gray-300 focus:ring focus:ring-purple-500 focus:outline-none" placeholder="Enter patient's full name">
+            </div>
+
+            <!-- Checkbox for Consent -->
+            <div class="flex items-start">
+                <div class="flex items-center h-5">
+                    <input id="consent-checkbox" name="consent" type="checkbox" required class="h-4 w-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500">
+                </div>
+                <div class="ml-3 text-sm leading-relaxed text-gray-700">
+                    <label for="consent-checkbox">
+                        By checking this box, you are giving us your express consent to use your images and/or videos for promotional and advertising purposes, including on social media channels (such as Instagram, Facebook, and TikTok) and on our website.
+                    </label>
+                </div>
+            </div>
+
+            <!-- Signature Pad Section -->
+            <div class="space-y-2 pt-4">
+                <label for="signature-pad" class="text-gray-700 text-sm font-semibold">Please provide your signature below:</label>
+                <div class="bg-white rounded-lg border-2 border-gray-300">
+                    <canvas id="signature-pad" class="w-full h-48"></canvas>
+                </div>
+                <button type="button" id="clear-signature" class="w-full text-center py-2 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-200">
+                    Clear Signature
+                </button>
+            </div>
+            
+            <!-- Additional Consent Statements -->
+            <div class="ml-7 text-sm space-y-3 text-gray-600">
+                <p>
+                    I understand that I can request to have my images and/or videos removed at any time by contacting the clinic.
+                </p>
+                <p>
+                    I understand that my images may be used anonymously, or with my first name only, unless otherwise discussed and agreed upon.
+                </p>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-4">
+                <button type="submit" class="w-full py-3 px-4 bg-purple-600 text-white font-semibold rounded-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition duration-200">
+                    Submit Consent
+                </button>
+            </div>
+        </form>
+
+        <!-- Success Message (hidden by default) -->
+        <div id="success-message" class="hidden text-center mt-8 p-6 bg-green-100 text-green-800 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-2">Thank you!</h2>
+            <p>Your consent has been submitted. You may close this page now.</p>
+        </div>
+    </div>
+
+    <script>
+        // Get all necessary elements
+        const consentForm = document.getElementById('consent-form');
+        const successMessage = document.getElementById('success-message');
+        const consentContainer = document.getElementById('consent-container');
+        const signatureCanvas = document.getElementById('signature-pad');
+        const clearButton = document.getElementById('clear-signature');
+        
+        const ctx = signatureCanvas.getContext('2d');
+        let isDrawing = false;
+        
+        // Function to resize the canvas to match its container
+        function resizeCanvas() {
+            const rect = signatureCanvas.getBoundingClientRect();
+            signatureCanvas.width = rect.width;
+            signatureCanvas.height = rect.height;
+            // Set the drawing style after resizing
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#333';
+        }
+
+        // Call resize on initial load and window resize
+        window.addEventListener('load', resizeCanvas);
+        window.addEventListener('resize', resizeCanvas);
+
+        // Function to get the canvas coordinates
+        function getPos(event) {
+            const rect = signatureCanvas.getBoundingClientRect();
+            const clientX = event.clientX || event.touches[0].clientX;
+            const clientY = event.clientY || event.touches[0].clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        // Start drawing
+        function startDrawing(event) {
+            isDrawing = true;
+            const pos = getPos(event);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+            event.preventDefault(); // Prevents scrolling on touch
+        }
+
+        // Draw line
+        function draw(event) {
+            if (!isDrawing) return;
+            const pos = getPos(event);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            event.preventDefault();
+        }
+
+        // Stop drawing
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        // Add event listeners for both mouse and touch
+        signatureCanvas.addEventListener('mousedown', startDrawing);
+        signatureCanvas.addEventListener('mousemove', draw);
+        signatureCanvas.addEventListener('mouseup', stopDrawing);
+        signatureCanvas.addEventListener('mouseout', stopDrawing);
+
+        signatureCanvas.addEventListener('touchstart', startDrawing);
+        signatureCanvas.addEventListener('touchmove', draw);
+        signatureCanvas.addEventListener('touchend', stopDrawing);
+
+        // Clear the signature pad
+        clearButton.addEventListener('click', () => {
+            ctx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+        });
+
+        // Add a listener for the form submission
+        consentForm.addEventListener('submit', async function(event) {
+            // Prevent the default form submission behavior
+            event.preventDefault();
+            
+            // Generate a full image of the form using html2canvas
+            const canvas = await html2canvas(consentContainer, { scale: 2 }); // Higher scale for better quality
+            const formImageBase64 = canvas.toDataURL('image/png'); // Get the image as a Base64 string
+
+            // Get the current date and time for the filename
+            const now = new Date();
+            const timestamp = now.toISOString().replace(/[:.]/g, '-');
+            
+            // Collect the patient name from the new input field
+            const patientName = document.querySelector('#patient-name').value;
+            
+            // Collect all the data to send to the backend
+            const formData = {
+                // We're now sending the full form image
+                formImage: formImageBase64,
+                timestamp: timestamp,
+                patientName: patientName,
+                // Consent status
+                consent: document.querySelector('#consent-checkbox').checked
+            };
+            
+            // IMPORTANT: You must replace this placeholder URL with your actual Google Apps Script URL.
+            const backendUrl = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+            console.log('Attempting to send data to:', backendUrl);
+
+            try {
+                // Use the fetch API to send the data
+                const response = await fetch(backendUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    // Show success message
+                    consentContainer.innerHTML = successMessage.outerHTML;
+                    const newSuccessMessage = document.getElementById('success-message');
+                    newSuccessMessage.classList.remove('hidden');
+                    console.log("Form image submitted successfully to the backend.");
+                } else {
+                    console.error('Failed to submit form:', response.statusText);
+                    alert('An error occurred. Please try again.');
+                }
+            } catch (error) {
+                console.error('Network error:', error);
+                alert('A network error occurred. Please check your connection and try again.');
+            }
+        });
+    </script>
+</body>
+</html>
